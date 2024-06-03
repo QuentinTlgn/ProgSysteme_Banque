@@ -3,7 +3,7 @@
 // ----------------------------------------------------------------------- 
 //     Ecrit le	:							par :
 // ----------------------------------------------------------------------- 
-//     Modifié le							par :
+//     Modifie le							par :
 // ========================================================== data C ===== 
 // ----------------------------------------------------------------------- 
 //     Include                      
@@ -16,7 +16,8 @@
 // ----------------------------------------------------------------------- 
 //     define                      
 // ----------------------------------------------------------------------- 
-#define FICHIERMABANQUE "U:\\C\\ProgSysteme_Banque1\\MaBanque.txt"
+#define FICHIERMABANQUE "U:\\C\\ProgSysteme_Banque\\MaBanque.txt"
+#define LINEAIRE
 // ----------------------------------------------------------------------- 
 //     Structure                       
 // ----------------------------------------------------------------------- 
@@ -32,7 +33,7 @@ struct ST_Operation {
 };
 
 // ----------------------------------------------------------------------- 
-//     Espace de données Global accessible par tous les threads                    
+//     Espace de donnees Global accessible par tous les threads                    
 // ----------------------------------------------------------------------- 
 
 
@@ -46,28 +47,29 @@ bool EcritureCompte(struct ST_Compte*);
 void AfficherCompte(struct ST_Compte*);
 int fileExists(const char*);
 
-
-// ======================================================================= 
-//     Main                      
-// ======================================================================= 
-int main()
-{
-
-	// ---- Fin du Processus maître
-	getchar();
-
-	ExitProcess(0);
-
-	return 0;
-
-}
-
-
 // ======================================================================= 
 //     Fonction Crediter                
 // ======================================================================= 
 void Crediter(struct ST_Operation* p_Credit)
 {
+	// Lire le compte du fichier
+	struct ST_Compte compte = p_Credit->CompteClient;
+	if (LectureCompte(&compte)) {
+		// Ajouter le montant de l'operation au solde
+		compte.Solde += p_Credit->MontantOperation;
+		// Incrementer le nombre d'operations
+		compte.NbreOperations += 1;
+		// ecrire le compte mis à jour dans le fichier
+		if (EcritureCompte(&compte)) {
+			printf("Credit reussi. Nouveau solde: %d\n", compte.Solde);
+		}
+		else {
+			printf("Erreur lors de l'ecriture du compte.\n");
+		}
+	}
+	else {
+		printf("Erreur lors de la lecture du compte.\n");
+	}
 }
 
 // ======================================================================= 
@@ -75,6 +77,30 @@ void Crediter(struct ST_Operation* p_Credit)
 // ======================================================================= 
 void Debiter(struct ST_Operation* p_Debit)
 {
+	// Lire le compte du fichier
+	struct ST_Compte compte = p_Debit->CompteClient;
+	if (LectureCompte(&compte)) {
+		// Verifier si le solde est suffisant pour debiter
+		if (compte.Solde >= p_Debit->MontantOperation) {
+			// Soustraire le montant de l'operation du solde
+			compte.Solde -= p_Debit->MontantOperation;
+			// Incrementer le nombre d'operations
+			compte.NbreOperations += 1;
+			// ecrire le compte mis à jour dans le fichier
+			if (EcritureCompte(&compte)) {
+				printf("Debit reussi. Nouveau solde: %d\n", compte.Solde);
+			}
+			else {
+				printf("Erreur lors de l'ecriture du compte.\n");
+			}
+		}
+		else {
+			printf("Fonds insuffisants pour debiter.\n");
+		}
+	}
+	else {
+		printf("Erreur lors de la lecture du compte.\n");
+	}
 }
 
 // ======================================================================= 
@@ -102,7 +128,7 @@ bool LectureCompte(struct ST_Compte* p_Compte)
 		}
 		// ---- Lecture du Fichier  : on lit que la premiere ligne
 		if (fscanf_s(pFichier, "%s %d %d", Nom, _countof(Nom), (int*)&Montant, (int*)&NbOperations) > 0) {
-			// ---- Client trouvé on met a jour les infos dans la structure passée en paramètres
+			// ---- Client trouve on met a jour les infos dans la structure passee en parametres
 			strcpy_s(p_Compte->NomClient, sizeof(p_Compte->NomClient), Nom);
 			p_Compte->Solde = Montant;
 			p_Compte->NbreOperations = NbOperations;
@@ -131,8 +157,8 @@ bool EcritureCompte(struct ST_Compte* p_Compte)
 		// ---- Open du Fichier MaBanque 
 		while (true) {
 			fopen_s(&pFichier, FICHIERMABANQUE, "w+");	// ouverture du fichier a vide si existant
-			// on boucle si l'open ne s'est pas bien passé car le fopen n accepte pas le partage de fichier
-			// donc on attend si il est occupé
+			// on boucle si l'open ne s'est pas bien passe car le fopen n accepte pas le partage de fichier
+			// donc on attend si il est occupe
 			if (pFichier != NULL) break;
 		}
 		bOK = true;
@@ -173,4 +199,78 @@ int fileExists(const char* fileName)
 	}
 
 	return (0 <= (INT_PTR)GetFileAttributesA(fileName));
+}
+
+// ======================================================================= 
+//     Main                      
+// ======================================================================= 
+int main()
+{
+#ifdef LINEAIRE
+	struct ST_Compte compte;
+	struct ST_Operation operation;
+
+	// Lecture initiale du compte pour afficher son etat
+	if (LectureCompte(&compte)) {
+		printf("etat initial du compte:\n");
+		AfficherCompte(&compte);
+	}
+	else {
+		printf("Erreur lors de la lecture initiale du compte.\n");
+	}
+
+	// Scenario de credit
+	printf("Credit de 100 unites.\n");
+	operation.MontantOperation = 100;
+	Crediter(&operation);
+
+	// Lecture du compte apres credit
+	if (LectureCompte(&compte)) {
+		printf("etat du compte apres credit:\n");
+		AfficherCompte(&compte);
+	}
+	else {
+		printf("Erreur lors de la lecture du compte apres credit.\n");
+	}
+
+	// Scenario de debit
+	printf("Debit de 50 unites.\n");
+	operation.MontantOperation = 50;
+	Debiter(&operation);
+
+	// Lecture du compte apres debit
+	if (LectureCompte(&compte)) {
+		printf("etat du compte apres debit:\n");
+		AfficherCompte(&compte);
+	}
+	else {
+		printf("Erreur lors de la lecture du compte apres debit.\n");
+	}
+
+	// Debit qui devrait echouer
+	printf("Tentative de debit de 1000 unites (devrait echouer si fonds insuffisants).\n");
+	operation.MontantOperation = 1000;
+	Debiter(&operation);
+
+	// Lecture du compte apres tentative de debit echouee
+	if (LectureCompte(&compte)) {
+		printf("etat du compte apres tentative de debit echouee:\n");
+		AfficherCompte(&compte);
+	}
+	else {
+		printf("Erreur lors de la lecture du compte apres tentative de debit echouee.\n");
+	}
+
+	getchar();
+	ExitProcess(0);
+	return 0;
+#endif // LINEAIRE
+
+	// ---- Fin du Processus maître
+	getchar();
+
+	ExitProcess(0);
+
+	return 0;
+
 }
