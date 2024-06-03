@@ -17,7 +17,7 @@
 //     define                      
 // ----------------------------------------------------------------------- 
 #define FICHIERMABANQUE "U:\\C\\ProgSysteme_Banque\\MaBanque.txt"
-#define LINEAIRE
+#define PARALLELE
 // ----------------------------------------------------------------------- 
 //     Structure                       
 // ----------------------------------------------------------------------- 
@@ -46,6 +46,9 @@ bool EcritureCompte(struct ST_Compte*);
 
 void AfficherCompte(struct ST_Compte*);
 int fileExists(const char*);
+
+DWORD WINAPI ThreadCrediter(LPVOID param);
+DWORD WINAPI ThreadDebiter(LPVOID param);
 
 // ======================================================================= 
 //     Fonction Crediter                
@@ -102,6 +105,26 @@ void Debiter(struct ST_Operation* p_Debit)
 		printf("Erreur lors de la lecture du compte.\n");
 	}
 }
+
+#ifdef PARALLELE
+// ======================================================================= 
+//     Fonctions PARALLELES                 
+// ======================================================================= 
+
+DWORD WINAPI ThreadCrediter(LPVOID param)
+{
+	struct ST_Operation* p_Credit = (struct ST_Operation*)param;
+	Crediter(p_Credit);
+	return 0;
+}
+
+DWORD WINAPI ThreadDebiter(LPVOID param)
+{
+	struct ST_Operation* p_Debit = (struct ST_Operation*)param;
+	Debiter(p_Debit);
+	return 0;
+}
+#endif // PARALLELE
 
 // ======================================================================= 
 //     Fonction Lecture Compte                 
@@ -261,10 +284,48 @@ int main()
 		printf("Erreur lors de la lecture du compte apres tentative de debit echouee.\n");
 	}
 
-	getchar();
-	ExitProcess(0);
-	return 0;
 #endif // LINEAIRE
+
+#ifdef PARALLELE
+	struct ST_Compte compte;
+	struct ST_Operation operationCredit, operationDebit;
+	HANDLE hThreadCredit, hThreadDebit;
+	DWORD dwThreadIdCredit, dwThreadIdDebit;
+
+	// Initialisation des operations
+	operationCredit.MontantOperation = 100; // Credit de 100 unites
+	operationDebit.MontantOperation = 50;   // Debit de 50 unites
+
+	// Lecture initiale du compte pour afficher son etat
+	if (LectureCompte(&compte)) {
+		printf("etat initial du compte:\n");
+		AfficherCompte(&compte);
+	}
+	else {
+		printf("Erreur lors de la lecture initiale du compte.\n");
+	}
+
+	// Creation des threads
+	hThreadCredit = CreateThread(NULL, 0, ThreadCrediter, &operationCredit, 0, &dwThreadIdCredit);
+	hThreadDebit = CreateThread(NULL, 0, ThreadDebiter, &operationDebit, 0, &dwThreadIdDebit);
+
+	// Attente de la fin des threads
+	WaitForSingleObject(hThreadCredit, INFINITE);
+	WaitForSingleObject(hThreadDebit, INFINITE);
+
+	// Fermeture des handles de threads
+	CloseHandle(hThreadCredit);
+	CloseHandle(hThreadDebit);
+
+	// Lecture du compte apres les operations
+	if (LectureCompte(&compte)) {
+		printf("etat du compte apres les operations:\n");
+		AfficherCompte(&compte);
+	}
+	else {
+		printf("Erreur lors de la lecture du compte apres les operations.\n");
+	}
+#endif // PARALLELE
 
 	// ---- Fin du Processus maître
 	getchar();
