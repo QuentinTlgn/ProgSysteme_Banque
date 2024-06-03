@@ -1,9 +1,9 @@
 ﻿  Main.c
-U:\C\ProgSysteme_Banque\ProgSysteme_Banque1\Main.c(153,26): warning C4477: 'fscanf_s' : la chaîne de format '%s' nécessite un argument de type 'unsigned int', mais l'argument variadique 2 est de type 'unsigned __int64'
-U:\C\ProgSysteme_Banque\ProgSysteme_Banque1\Main.c(153,26): message : cet argument est utilisé comme taille de mémoire tampon
+U:\C\ProgSysteme_Banque\ProgSysteme_Banque1\Main.c(154,26): warning C4477: 'fscanf_s' : la chaîne de format '%s' nécessite un argument de type 'unsigned int', mais l'argument variadique 2 est de type 'unsigned __int64'
+U:\C\ProgSysteme_Banque\ProgSysteme_Banque1\Main.c(154,26): message : cet argument est utilisé comme taille de mémoire tampon
   Génération de code en cours
-  1 of 16 functions ( 6.2%) were compiled, the rest were copied from previous compilation.
+  3 of 14 functions (21.4%) were compiled, the rest were copied from previous compilation.
     0 functions were new in current compilation
-    0 functions had inline decision re-evaluated but remain unchanged
+    3 functions had inline decision re-evaluated but remain unchanged
   Fin de la génération du code
   ProgSysteme_Banque1.vcxproj -> U:\C\ProgSysteme_Banque\x64\Release\ProgSysteme_Banque1.exe
