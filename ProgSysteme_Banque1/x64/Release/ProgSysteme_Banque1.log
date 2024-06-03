@@ -1,0 +1,8 @@
+﻿  Main.c
+U:\C\ProgSysteme_Banque\ProgSysteme_Banque1\Main.c(104,26): warning C4477: 'fscanf_s' : la chaîne de format '%s' nécessite un argument de type 'unsigned int', mais l'argument variadique 2 est de type 'unsigned __int64'
+U:\C\ProgSysteme_Banque\ProgSysteme_Banque1\Main.c(104,26): message : cet argument est utilisé comme taille de mémoire tampon
+  Génération de code en cours
+  Previous IPDB and IOBJ mismatch, fall back to full compilation.
+  All 3 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
+  Fin de la génération du code
+  ProgSysteme_Banque1.vcxproj -> U:\C\ProgSysteme_Banque\x64\Release\ProgSysteme_Banque1.exe
