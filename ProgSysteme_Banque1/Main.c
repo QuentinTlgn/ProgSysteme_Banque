@@ -17,7 +17,10 @@
 //     define                      
 // ----------------------------------------------------------------------- 
 #define FICHIERMABANQUE "U:\\C\\ProgSysteme_Banque\\MaBanque.txt"
+
 #define PARALLELE
+#define DEKKER
+
 //#define LINEAIRE
 // ----------------------------------------------------------------------- 
 //     Structure                       
@@ -37,6 +40,10 @@ struct ST_Operation {
 //     Espace de donnees Global accessible par tous les threads                    
 // ----------------------------------------------------------------------- 
 
+#ifdef DEKKER
+volatile int c[2];
+volatile int tour;
+#endif // DEKKER
 
 // ----------------------------------------------------------------------- 
 //     Prototype des Fonctions 
@@ -65,7 +72,7 @@ void Crediter(struct ST_Operation* p_Credit)
 		compte.NbreOperations += 1;
 		// ecrire le compte mis à jour dans le fichier
 		if (EcritureCompte(&compte)) {
-			printf("Credit reussi. Nouveau solde: %d\n", compte.Solde);
+			printf("Credit de %d reussi. Nouveau solde: %d\n", p_Credit->MontantOperation, compte.Solde);
 		}
 		else {
 			printf("Erreur lors de l'ecriture du compte.\n");
@@ -92,7 +99,7 @@ void Debiter(struct ST_Operation* p_Debit)
 			compte.NbreOperations += 1;
 			// ecrire le compte mis à jour dans le fichier
 			if (EcritureCompte(&compte)) {
-				printf("Debit reussi. Nouveau solde: %d\n", compte.Solde);
+				printf("Debit de %d reussi. Nouveau solde: %d\n", p_Debit->MontantOperation ,compte.Solde);
 			}
 			else {
 				printf("Erreur lors de l'ecriture du compte.\n");
@@ -114,15 +121,37 @@ void Debiter(struct ST_Operation* p_Debit)
 
 DWORD WINAPI ThreadCrediter(LPVOID param)
 {
+#ifdef DEKKER
+	int i = 1; int j = 0;
+	c[i] = TRUE;
+	tour = j;
+	while ((c[j]) && (tour == j)) {};
+#endif // DEKKER
+
 	struct ST_Operation* p_Credit = (struct ST_Operation*)param;
 	Crediter(p_Credit);
+
+#ifdef DEKKER
+	c[i] = FALSE;
+#endif // DEKKER
 	return 0;
 }
 
 DWORD WINAPI ThreadDebiter(LPVOID param)
 {
+#ifdef DEKKER
+	int i = 0; int j = 1;
+	c[i] = TRUE;
+	tour = j;
+	while ((c[j]) && (tour == j)) {};
+#endif // DEKKER
+
 	struct ST_Operation* p_Debit = (struct ST_Operation*)param;
 	Debiter(p_Debit);
+
+#ifdef DEKKER
+	c[i] = FALSE;
+#endif // DEKKER
 	return 0;
 }
 #endif // PARALLELE
@@ -288,6 +317,13 @@ int main()
 #endif // LINEAIRE
 
 #ifdef PARALLELE
+
+#ifdef DEKKER
+	c[0] = FALSE;
+	c[1] = FALSE;
+	tour = 0;
+#endif // DEKKER
+
 	struct ST_Compte compte;
 	struct ST_Operation operationCredit, operationDebit;
 	HANDLE hThreadCredit, hThreadDebit;
